@@ -30,8 +30,9 @@ def apply_geo_transform(one_img, one_mask, trans_mat, size):
 
 
 def update_agg_inst_n_mask(one_inst, one_mask, agg_inst, agg_mask):
-    update_agg_mask(one_mask, agg_mask)
-    update_agg_inst(one_inst, one_mask, agg_inst)
+    agg_inst = update_agg_inst(one_inst, one_mask, agg_inst)
+    agg_mask = update_agg_mask(one_mask, agg_mask)
+    return agg_inst, agg_mask
 
 
 def update_agg_inst(one_inst, one_mask, agg_inst):
@@ -40,3 +41,4 @@ def update_agg_inst(one_inst, one_mask, agg_inst):
     change agg_inst in-place
     """
     agg_inst = (one_mask == 0) * agg_inst + (one_mask != 0) * one_inst
+    return agg_inst

@@ -13,6 +13,7 @@ def update_agg_mask(one_mask , agg_mask):
     agg_mask = np.logical_or(one_mask, agg_mask)
     agg_mask = np.uint8(agg_mask)
     agg_mask[agg_mask != 0] = 255
+    return agg_mask
 
 
 def update_overlap_mask(one_mask, agg_mask, overlap_mask):
@@ -23,6 +24,7 @@ def update_overlap_mask(one_mask, agg_mask, overlap_mask):
     intersect_mask = np.logical_and(one_mask, agg_mask)
     xs, ys = np.where(intersect_mask)
     overlap_mask[xs, ys] = 255
+    return overlap_mask
 
 
 def is_ofb(one_mask, threshold = 400):

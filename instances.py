@@ -17,7 +17,8 @@ import cv2
 import numpy as np
 
 from sampling import sample_transform_matrix
-from mask import is_ofb, is_serious_overlap, is_double_overlap, update_agg_mask, update_overlap_mask
+from mask import is_ofb, is_serious_overlap, is_double_overlap, update_overlap_mask, update_agg_inst_n_mask
+from pair import apply_geo_transform
 
 
 class Instances:
@@ -56,10 +57,12 @@ class Instances:
         for i in range(inst_n):
             propose_inst, propose_mask = self.propose_a_valid_inst(agg_mask, overlap_mask)
             inst_dict[i + 1] = {'image': propose_inst, 'mask': propose_mask}
-            update_agg_mask(propose_mask, agg_mask)
-            update_overlap_mask(propose_mask, agg_mask, overlap_mask)
+            # must do update_overlap_mask BEFORE update_agg_mask
+            overlap_mask = update_overlap_mask(propose_mask, agg_mask, overlap_mask)
+            agg_inst, agg_mask = update_agg_inst_n_mask(propose_inst, propose_mask, agg_inst, agg_mask)
         # set as class object properties
         self.inst_dict = inst_dict
+        self.agg_inst = agg_inst
         self.agg_mask = agg_mask
         self.overlap_mask = overlap_mask
 
@@ -74,16 +77,26 @@ class Instances:
         output:
             propose_inst, propose_mask -- uint8 np array, valid instance and its mask
         """
-        propose_inst, propose_mask = self.sampling_inst()
+        propose_inst, propose_mask = self.sample_trans_inst()
         while not self.is_valid_mask(propose_mask, agg_mask, overlap_mask):
-            propose_inst, propose_mask = self.sampling_inst()
+            propose_inst, propose_mask = self.sample_trans_inst()
         return propose_inst, propose_mask
 
-    def sampling_inst(self):
-        size = self.size
-        trans_mat = sample_transform_matrix(size)
-        propose_inst, propose_mask = None, None
+    def sample_trans_inst(self):
+        """
+        sample (instance image, instance mask) pair and then sample geometric transformation on them
+        """
+        one_inst, one_mask = self.sample_inst()
+        trans_mat = sample_transform_matrix(self.size)
+        propose_inst, propose_mask = apply_geo_transform(one_inst, one_mask, trans_mat, self.size)
         return propose_inst, propose_mask
+
+    def sample_inst(self):
+        """
+        sample (instance image, instance mask) pair from img_dir
+        """
+        one_inst, one_mask = None, None
+        return one_inst, one_mask
 
     def is_valid_mask(self, one_mask, agg_mask, overlap_mask):
         if is_ofb(one_mask):
