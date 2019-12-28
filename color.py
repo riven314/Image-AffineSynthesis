@@ -22,7 +22,7 @@ def make_color_dull(inst_img, inst_mask, alpha, constant):
     new_inst_img[inst_mask != 0] = np.clip(inst_img[inst_mask != 0] * alpha + constant,
                                       a_min = 0, a_max = None)
     # recover back from np.int8 to np.uint8
-    new_inst_img.dtype = np.uint8
+    new_inst_img = new_inst_img.astype(np.uint8)
     return new_inst_img
 
 

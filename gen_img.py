@@ -1,7 +1,9 @@
 """
 aggregate several layers to generate an image, init by sampling parameters
-- instance group
-- background
-- color change on instance groups (apply after instances merge with background)
-(- add air bubble / extra noise)
+- instance group (tgt with color change for reducing color contrast)
+- background (can use SinGAN to generate that)
+- (add air bubble / extra noise)
+- (apply gaussian blur on overall image)
+
+** retrieve bounding box ground truth
 """

@@ -57,8 +57,11 @@ def is_serious_overlap(agg_mask, one_mask, area_threshold = 250, length_threshol
         boolean -- True: having a serious overlapping
     """
     intersect_mask = np.logical_and(agg_mask, one_mask)
+    # change from bool to np.uint8 before cv2.connectedComponents
+    intersect_mask = np.uint8(intersect_mask)
     _, labels = cv2.connectedComponents(intersect_mask)
-    for idx in labels:
+    idx_ls = np.unique(labels)
+    for idx in idx_ls:
         # omit background
         if idx == 0:
             continue

@@ -15,24 +15,33 @@ import cv2
 import numpy as np
 
 
-def sample_file(files_dir):
+def sample_color_contrast_param():
     """
-    sample .tif image file and .png mask file pair
+    random sample parameters for making color contrast on instances
+
+    output:
+        alpha -- float, (0.8 - 1.0)
+        constant -- uniform, (20 - 60)*-1
+    """
+    alpha = np.random.uniform(low = 0.8, high = 1.)
+    constant = np.random.uniform(low = 20, high = 60) * -1
+    return alpha, constant
     
-    input: file_dir -- dir to .tif images and .png masks 
+
+def sample_transform_matrix(size, loc = None, rad_fraction = None):
     """
-    tif_ls = [f for f in os.listdir(files_dir) if f.endswith('.tif')]
-    png_ls = [f for f in os.listdir(files_dir) if f.endswith('.png')]
-    pairs_ls = [(tif, png) for tif, png in zip(tif_ls, png_ls)]
-    sample_pair = sample(pairs_ls, 1)[0]
-    sample_pair = (os.path.join(files_dir, sample_pair[0]), os.path.join(files_dir, sample_pair[1]))
-    return sample_pair
+    randomly sample a geometric transformation matrix if loc, rad_fraction not specified
 
-
-def sample_transform_matrix(size):
+    input:
+        size -- tuple, size of output image
+        loc -- tuple (tx, ty), translation parameters. tx - vertical, ty - horizontal
+        rad_fraction -- float (0-2), fraction of 2*pi
+    """
     h, w = size
-    loc = sample_translate_param(size, l_limit = -70, h_limit = h - 160 + 80)
-    rad_fraction = sample_rotate_param()
+    if loc is None:
+        loc = sample_translate_param(size, l_limit = -70, h_limit = h - 160 + 80)
+    if rad_fraction is None:
+        rad_fraction = sample_rotate_param()
     trans_mat = get_transform_matrix(loc, rad_fraction)
     return trans_mat
 
