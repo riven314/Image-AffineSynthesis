@@ -45,7 +45,7 @@ def is_ofb(one_mask, threshold = 400):
         return False
 
 
-def is_serious_overlap(agg_mask, one_mask, area_threshold = 250, length_threshold = 30):
+def is_serious_overlap(agg_mask, one_mask, area_threshold = 250, length_threshold = 25):
     """
     check two mask overlap with an area too large / too wide. area should be bounded by square
     check any disjoint set of overlapping areas
@@ -80,7 +80,7 @@ def is_serious_overlap(agg_mask, one_mask, area_threshold = 250, length_threshol
 
 def is_double_overlap(overlap_mask, one_mask, threshold = 20):
     """
-    check no more than 2 instances overlap on same area
+    check no more than 2 instances overlap on same area 
 
     input:
         overlap_mask -- uint8 np array, mask bookmarking overlapping areas

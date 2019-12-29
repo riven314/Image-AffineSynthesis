@@ -15,6 +15,27 @@ import cv2
 import numpy as np
 
 
+def sample_background_param():
+    mean = np.random.uniform(low = 150., high = 230.)
+    sd = np.random.uniform(low = 0, high = 20)
+    return mean, sd
+
+
+def sample_spotlight_param(img_size, crop_size):
+    """
+    input:
+        img_size -- tuple, size of image to be cropped
+        crop_size -- tuple, size of crop image
+    """
+    h, w = img_size
+    crop_h, crop_w = crop_size
+    out_h = np.random.randint(low = 0, high = h - crop_h)
+    out_w = np.random.randint(low = 0, high = w - crop_w)
+    light_mean = np.random.uniform(20, 80)
+    light_sd = np.random.uniform(60, 120)
+    return (out_h, out_w), light_mean, light_sd
+
+
 def sample_color_contrast_param():
     """
     random sample parameters for making color contrast on instances
@@ -23,7 +44,7 @@ def sample_color_contrast_param():
         alpha -- float, (0.8 - 1.0)
         constant -- uniform, (20 - 60)*-1
     """
-    alpha = np.random.uniform(low = 0.8, high = 1.)
+    alpha = np.random.uniform(low = 0.75, high = 1.)
     constant = np.random.uniform(low = 20, high = 60) * -1
     return alpha, constant
     

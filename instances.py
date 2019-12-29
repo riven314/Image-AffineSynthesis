@@ -70,7 +70,8 @@ class Instances:
             propose_inst, propose_mask = self.propose_a_valid_inst(agg_mask, overlap_mask)
             if is_change_color:
                 propose_inst = make_color_dull(propose_inst, propose_mask, alpha, constant)
-            inst_dict[i + 1] = {'image': propose_inst, 'mask': propose_mask}
+            bbox_ls = self.get_bbox(propose_mask)
+            inst_dict[i + 1] = {'image': propose_inst, 'mask': propose_mask, 'bbox': bbox_ls}
             # must do update_overlap_mask BEFORE update_agg_mask
             overlap_mask = update_overlap_mask(propose_mask, agg_mask, overlap_mask)
             agg_inst, agg_mask = update_agg_inst_n_mask(propose_inst, propose_mask, agg_inst, agg_mask)
@@ -82,6 +83,23 @@ class Instances:
         out_dict['overlap_mask'] = overlap_mask
         out_dict['color_param'] = [alpha, constant]
         return out_dict
+
+    def get_bbox(self, mask, delta = 2):
+        """
+        bounding box is parameterised by (x_min, y_min, x_max, y_max)
+
+        output: 
+            bbox_ls -- list, [x_min, y_min, x_max, y_max]
+        """
+        h, w = mask.shape
+        xs, ys = np.where(mask != 0)
+        x_min, x_max = xs.min(), xs.max()
+        y_min, y_max = ys.min(), ys.max()
+        x_min = max(x_min - delta, 0)
+        y_min = max(y_min - delta, 0)
+        x_max = min(x_max + delta, h)
+        y_max = min(y_max + delta, w)
+        return [x_min, y_min, x_max, y_max]
 
     def propose_a_valid_inst(self, agg_mask, overlap_mask):
         """
