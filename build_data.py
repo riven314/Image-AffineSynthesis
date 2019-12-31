@@ -56,19 +56,20 @@ def build_csv_dataset(crop_img_dir, data_base_dir, out_size, max_inst_n, img_per
         os.mkdir(img_dir)
         print('dir created: {}'.format(img_dir))
     csv_writer = open(os.path.join(data_base_dir, 'labels.csv'), 'w')
-    temp_img_f = 'cnt{}_no{}.tif'
+    temp_img_f = 'cnt{:02d}_no{:03d}.tif'
     # init instances object
     inst = Instances(crop_img_dir, size = out_size)
     # iterate simulation, start from inst_n = 1
     for inst_n in range(1, max_inst_n + 1):
         print('instance #: {}'.format(inst_n))
-        for i in range(max_inst_n):
+        for i in range(img_per_n):
             img_f = temp_img_f.format(inst_n, i+1)
             w_path = os.path.join(img_dir, img_f)
             result_dict = gen_one_img(inst, inst_n)
             write_csv(csv_writer, result_dict, w_path)
             cv2.imwrite(w_path, result_dict['image'])
             print('written: {}'.format(w_path))
+    csv_writer.close()
     print('simulation completed!')
 
 
@@ -85,6 +86,7 @@ def write_csv(csv_writer, result_dict, w_path):
         bbox_ls = inst_dict['bbox']
         bbox_ls = [int(i) for i in bbox_ls]
         s = ','.join(map(str, bbox_ls))
+        s = s + ',' + 'c'
         s = w_path + ',' + s
         s = s + '\n'
         csv_writer.write(s)

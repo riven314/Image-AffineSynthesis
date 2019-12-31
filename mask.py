@@ -93,3 +93,33 @@ def is_double_overlap(overlap_mask, one_mask, threshold = 20):
         return True
     else:
         return False
+
+
+def is_big_relative_overlap(agg_mask, one_mask, threshold = 0.3):
+    """
+    get total overlapping area between agg_mask and one_mask (total_overlap)
+    reject if total_overlap / total >= 0.3
+    """
+    total_overlap = np.logical_and(agg_mask, one_mask).sum()
+    total = (one_mask != 0).sum()
+    if total_overlap / total >= threshold:
+        return True
+    else:
+        return False
+
+
+def is_multi_cross(agg_mask, one_mask):
+    """
+    one_mask can't overlap with agg_mask in more than 3 disjoint area
+    """
+    overlap = np.logical_and(agg_mask, one_mask)
+    overlap = np.uint8(overlap)
+    overlap_cnt, _ = cv2.connectedComponents(overlap)
+    # remove count for background
+    overlap_cnt -= 1
+    if overlap_cnt > 3:
+        return True
+    else:
+        return False
+
+

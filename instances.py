@@ -16,9 +16,11 @@ from random import sample
 
 import cv2
 import numpy as np
+from numpy.random import choice
 
 from sampling import sample_transform_matrix, sample_color_contrast_param
-from mask import is_ofb, is_serious_overlap, is_double_overlap, update_overlap_mask
+from mask import is_ofb, is_serious_overlap, is_double_overlap, is_big_relative_overlap, is_multi_cross
+from mask import update_overlap_mask
 from pair import apply_geo_transform, update_agg_inst_n_mask
 from color import make_color_dull
 
@@ -43,6 +45,9 @@ class Instances:
         self.img_dir = img_dir
         self.size = size
         self.get_tif_ls()
+        # bookmark tif being used in an image
+        self.crt_tif = None 
+        self.used_tif = []
 
     def propose_valid_img(self, inst_n, is_change_color = True):
         """
@@ -67,6 +72,7 @@ class Instances:
         alpha, constant = sample_color_contrast_param()
         # generate inst_n valid instances
         for i in range(inst_n):
+            # avoid same tif file to be sampled again
             propose_inst, propose_mask = self.propose_a_valid_inst(agg_mask, overlap_mask)
             if is_change_color:
                 propose_inst = make_color_dull(propose_inst, propose_mask, alpha, constant)
@@ -75,6 +81,10 @@ class Instances:
             # must do update_overlap_mask BEFORE update_agg_mask
             overlap_mask = update_overlap_mask(propose_mask, agg_mask, overlap_mask)
             agg_inst, agg_mask = update_agg_inst_n_mask(propose_inst, propose_mask, agg_inst, agg_mask)
+        # sanity check and then clean self.crt_tif, self.used_tif
+        assert len(self.used_tif) == inst_n, '[ERROR] used_tif len != inst_n'
+        self.crt_tif = None
+        self.used_tif = []
         # wrap all results into a dict
         out_dict = {} 
         out_dict['inst_dict'] =  inst_dict
@@ -113,8 +123,10 @@ class Instances:
             propose_inst, propose_mask -- uint8 np array, valid instance and its mask
         """
         propose_inst, propose_mask = self.sample_trans_inst()
-        while not self.is_valid_mask(propose_mask, agg_mask, overlap_mask):
+        # reject either if the propose mask is invalid or the tif file is already used
+        while (not self.is_valid_mask(propose_mask, agg_mask, overlap_mask)) or (self.crt_tif in self.used_tif):
             propose_inst, propose_mask = self.sample_trans_inst()
+        self.used_tif.append(self.crt_tif)
         return propose_inst, propose_mask
 
     def sample_trans_inst(self):
@@ -131,7 +143,8 @@ class Instances:
         sample (instance image, instance mask) pair from img_dir
         """
         # sample .tif, .png pair
-        tif_f = sample(self.tif_ls, 1)[0]
+        #tif_f = sample(self.tif_ls, 1)[0]
+        tif_f = choice(self.tif_ls, size = 1, replace = False)[0]
         png_f = '{}.png'.format(os.path.splitext(tif_f)[0])
         # construct path to .tif and .png and check existance
         tif_path = os.path.join(self.img_dir, tif_f)
@@ -141,21 +154,26 @@ class Instances:
         # read .tif and .png into numpy array
         one_inst = cv2.imread(tif_path, cv2.IMREAD_GRAYSCALE)
         one_mask = cv2.imread(png_path, cv2.IMREAD_GRAYSCALE)
+        # bookmark current tif being sampled
+        self.crt_tif = tif_f
         return one_inst, one_mask
 
     def is_valid_mask(self, one_mask, agg_mask, overlap_mask):
+        is_valid = False
         if is_ofb(one_mask):
             print('rejected because out of box')
-            return False
         elif is_serious_overlap(agg_mask, one_mask):
             print('rejected because big overlap area')
-            return False
         elif is_double_overlap(overlap_mask, one_mask):
             print('rejected because wide overlap area')
-            return False
+        elif is_multi_cross(agg_mask, one_mask):
+            print('rejected because one_mask overlap so many times')
+        elif is_big_relative_overlap(agg_mask, one_mask):
+            print('rejected because one_mask overlap in relative big area')
         # pass the test if the above pass
         else:
-            return True
+            is_valid = True
+        return is_valid
 
     def get_tif_ls(self):
         assert self.img_dir is not None, '[ERROR] self.img_dir is None'
